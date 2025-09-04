@@ -1,0 +1,2 @@
+Format:
+class_index x1 y1 x2 y2 ... xN yN
