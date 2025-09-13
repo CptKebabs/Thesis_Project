@@ -63,8 +63,8 @@ width, height = color_image.size
 resized_pred = Image.fromarray(depth).resize((width, height), Image.NEAREST)
 
 x, y = np.meshgrid(np.arange(width), np.arange(height))
-x = (x - width / 2) / 470.4
-y = (y - height / 2) / 470.4
+x = (x - width / 2) / 470.4     #need to calibrate and get actual values: focal_length_x
+y = (y - height / 2) / 470.4    #focal_length_y
 z = np.array(resized_pred)
 points = np.stack((np.multiply(x, z), np.multiply(y, z), z), axis=-1).reshape(-1, 3)
 colors = np.array(color_image).reshape(-1, 3) / 255.0
