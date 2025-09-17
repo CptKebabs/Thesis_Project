@@ -1,5 +1,6 @@
 *.png
 *.jpeg
+*.mp4
 DepthModel/depth_anything_v2_vits.pth
 DepthModel/depth_anything_v2_vitb.pth
 DepthModel/depth_anything_v2_vitl.pth
