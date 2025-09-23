@@ -53,13 +53,11 @@ ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, grey_im
 
 print(mtx)
 
+#1080p 16:9 W 
 #earlier
 #[[887.96476705   0.         960.38019362]
 # [  0.         887.51688746 532.69955894]
 # [  0.           0.           1.        ]]
-
-
-
 
 #later
 #[[888.29855742   0.         960.53009391]

@@ -5,6 +5,9 @@
 #call depthAnythingV2 model on image
 
 
+def generate_point_clouds(image, direction, mask, scale_factor):
+
+
 
 
 
