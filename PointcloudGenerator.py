@@ -6,7 +6,7 @@
 
 
 def generate_point_clouds(image, direction, mask, scale_factor):
-
+    return
 
 
 

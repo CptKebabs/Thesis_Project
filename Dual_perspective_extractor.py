@@ -1,19 +1,19 @@
 import cv2
 import numpy as np
 
-video_path = "./[Electro House] Virtual Riot - Energy Drink-360p.mp4"
-video_path2 = "./Tristam - I Remember [Monstercat Release]-360p.mp4"
+video_path_top = "./[Electro House] Virtual Riot - Energy Drink-360p.mp4"#top video
+video_path_bot = "./Tristam - I Remember [Monstercat Release]-360p.mp4"#bottom video
 
-cap = cv2.VideoCapture(video_path)
-cap2 = cv2.VideoCapture(video_path2)
+cap = cv2.VideoCapture(video_path_top)
+cap2 = cv2.VideoCapture(video_path_bot)
 frame_count = 0
 
 if not cap.isOpened():
-    print(f"Failed Opening: {video_path}")
+    print(f"Failed Opening: {video_path_top}")
     exit()
 
 if not cap2.isOpened():
-    print(f"Failed Opening: {video_path2}")
+    print(f"Failed Opening: {video_path_bot}")
     exit()
 
 while True:
@@ -34,8 +34,8 @@ while True:
     if key & 0xFF == ord("q"):# q to exit
         break
     elif key & 0xFF == ord("s"):#s to save frames
-        cv2.imwrite(f"ImageExtractorOutput/SavePers1_{frame_count}.png",frame1)
-        cv2.imwrite(f"ImageExtractorOutput/SavePers2_{frame_count}.png",frame2)
+        cv2.imwrite(f"ImageExtractorOutput/TopPers_{frame_count}.png",frame1)
+        cv2.imwrite(f"ImageExtractorOutput/BotPers_{frame_count}.png",frame2)
     
     frame_count += 1
 
