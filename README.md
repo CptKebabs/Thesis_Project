@@ -15,4 +15,5 @@ Guven Gemikonakli
 
 ## Current todos
 - setup YOLO and B3MD
+- train_model.py 
 - make a requirements.txt
