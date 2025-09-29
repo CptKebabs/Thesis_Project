@@ -1,6 +1,7 @@
 *.png
 *.jpeg
 *.mp4
+__pycache__
 DepthModel/depth_anything_v2_vits.pth
 DepthModel/depth_anything_v2_vitb.pth
 DepthModel/depth_anything_v2_vitl.pth
