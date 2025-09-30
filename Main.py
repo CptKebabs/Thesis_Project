@@ -7,8 +7,12 @@ import numpy as np
 from PIL import Image
 import open3d as o3d #point cloud stuff
 import torch    #Neural network stuff
+
+#This repo imports
 import Depth_Map
-import Point_Cloud as Point_Cloud
+import Point_Cloud
+import Segmentation_Mask
+
 
 FOCAL_LENGTH_X = 400
 FOCAL_LENGTH_Y = 400
@@ -29,20 +33,38 @@ FOCAL_LENGTH_Y = 400
 
 #need to be able to compare original predictions with our ones next
 
+#setup
 
-#add the Depth-anything repo to the program path So we can import depth_anything_v2
-image_path = "./ImageExtractorOutput/IMG_0865.jpeg"
-
-#GenerateDepthMap.generate_depth_map_as_rgb(image_path)
-
-depth = Depth_Map.generate_depth_map(image_path)
-###########################################
-point_cloud = Point_Cloud.generate_basic_coloured_point_cloud(image_path, depth, FOCAL_LENGTH_X, FOCAL_LENGTH_Y)
-Point_Cloud.render_point_cloud(point_cloud)
-
+#read the file to determine file paths and scale factor
+top_image = "./ImageExtractorOutput/HouseHD.PNG"
+#bottom_image = "./ImageExtractorOutput/IMG_0865.jpeg"
+#top_scale_factor = 
+#bottom_scale_factor = 
 
 ################################################################
+#generate the depth maps
 
+top_depth_map = Depth_Map.generate_depth_map(top_image)
+#bottom_depth_map = Depth_Map.generate_depth_map(bottom_image)
+
+################################################################
+#generate the image masks
+
+testing_mask = Segmentation_Mask.testing_mask(top_depth_map.shape[0],top_depth_map.shape[1])#this is height * width
+#top_mask = Segmentation_Mask.infer_image(top_image)
+#bottom_mask = Segmentation_Mask.infer_image(bottom_image)
+
+################################################################
+#convert them to a point cloud
+
+point_cloud = Point_Cloud.generate_point_cloud_with_mask(top_image, top_depth_map, FOCAL_LENGTH_X, FOCAL_LENGTH_Y, testing_mask)#place holder for now in future read scale factor and use mask
+Point_Cloud.render_point_cloud(point_cloud)
+
+################################################################
+#merge the two point clouds using translation matrices
+
+################################################################
+#reproject and generate new masks
 
 #Process will be as follows:
     #loop for all pairs of images (first get it working for one then repeat for all in input folder)(
