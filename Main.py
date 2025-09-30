@@ -36,28 +36,26 @@ FOCAL_LENGTH_Y = 400
 #setup
 
 #read the file to determine file paths and scale factor
-top_image = "./ImageExtractorOutput/HouseHD.PNG"
+top_image = "ImageExtractorOutput/bus.jpg"
 #bottom_image = "./ImageExtractorOutput/IMG_0865.jpeg"
 #top_scale_factor = 
 #bottom_scale_factor = 
 
 ################################################################
-#generate the depth maps
-
-top_depth_map = Depth_Map.generate_depth_map(top_image)
-#bottom_depth_map = Depth_Map.generate_depth_map(bottom_image)
-
-################################################################
 #generate the image masks
 
-testing_mask = Segmentation_Mask.testing_mask(top_depth_map.shape[0],top_depth_map.shape[1])#this is height * width
-#top_mask = Segmentation_Mask.infer_image(top_image)
+top_mask = Segmentation_Mask.infer_and_create_mask(top_image)#for some reason depthAnything stuffs up CUDA so that yolo cant use it, so we need to run yolo first (or use CPU)
 #bottom_mask = Segmentation_Mask.infer_image(bottom_image)
 
 ################################################################
+#generate the depth maps
+top_depth_map = Depth_Map.generate_depth_map(top_image)
+#bottom_depth_map = Depth_Map.generate_depth_map(bottom_image)
+
+
 #convert them to a point cloud
 
-point_cloud = Point_Cloud.generate_point_cloud_with_mask(top_image, top_depth_map, FOCAL_LENGTH_X, FOCAL_LENGTH_Y, testing_mask)#place holder for now in future read scale factor and use mask
+point_cloud = Point_Cloud.generate_point_cloud_with_mask(top_image, top_depth_map, FOCAL_LENGTH_X, FOCAL_LENGTH_Y, top_mask)#place holder for now in future read scale factor and use mask
 Point_Cloud.render_point_cloud(point_cloud)
 
 ################################################################
