@@ -36,31 +36,64 @@ FOCAL_LENGTH_Y = 400
 #setup
 
 #read the file to determine file paths and scale factor
-top_image = "ImageExtractorOutput/bus.jpg"
+
+ref_obj_points, depth_values = Depth_Map.read_scale_file("ImageExtractorOutput/HouseHD_500.scale")#reads as string
+print(ref_obj_points)
+print(depth_values)
+#now test the more complex method
+
+
+
+top_image = "ImageExtractorOutput/HouseHD.PNG"
+
 #bottom_image = "./ImageExtractorOutput/IMG_0865.jpeg"
-#top_scale_factor = 
+top_depth_map = Depth_Map.generate_depth_map(top_image)
+
+top_scale_factor = Depth_Map.get_simple_scale_factor(int(depth_values[0]))
+top_scale_factor_2 = Depth_Map.get_scale_factor(top_depth_map, int(ref_obj_points[0][0]),int(ref_obj_points[0][1]),int(ref_obj_points[1][0]),int(ref_obj_points[1][1]), 400, 400, 720, 942)
+print(top_scale_factor)
+print(top_scale_factor_2)
+
+exit()
 #bottom_scale_factor = 
 
 ################################################################
 #generate the image masks
 
-top_mask = Segmentation_Mask.infer_and_create_mask(top_image)#for some reason depthAnything stuffs up CUDA so that yolo cant use it, so we need to run yolo first (or use CPU)
+#top_mask = Segmentation_Mask.infer_and_create_mask(top_image)#for some reason depthAnything stuffs up CUDA so that YOLO cant use it, so we need to run yolo first (or use CPU)
+
 #bottom_mask = Segmentation_Mask.infer_image(bottom_image)
 
 ################################################################
 #generate the depth maps
-top_depth_map = Depth_Map.generate_depth_map(top_image)
+#top_depth_map = Depth_Map.generate_depth_map(top_image)
+
 #bottom_depth_map = Depth_Map.generate_depth_map(bottom_image)
 
+################################################################
+#read scale factor
+#top_scale = 
+#bottom_scale =
 
+
+
+################################################################
 #convert them to a point cloud
 
-point_cloud = Point_Cloud.generate_point_cloud_with_mask(top_image, top_depth_map, FOCAL_LENGTH_X, FOCAL_LENGTH_Y, top_mask)#place holder for now in future read scale factor and use mask
-Point_Cloud.render_point_cloud(point_cloud)
+test_point_cloud = Point_Cloud.testing_point_cloud()
+test_point_cloud_2 = Point_Cloud.testing_point_cloud()
+Point_Cloud.translate_point_cloud(test_point_cloud_2,0,0,10)#dx, dy, dz
+Point_Cloud.rotate_point_cloud_X(test_point_cloud,90)
+
+
+#point_cloud = Point_Cloud.generate_basic_coloured_point_cloud(top_image, top_depth_map, 400, 400)
+#point_cloud = Point_Cloud.generate_point_cloud_with_mask(top_image, top_depth_map, FOCAL_LENGTH_X, FOCAL_LENGTH_Y, top_mask, top_scale_factor)#place holder for now in future read scale factor and use mask
+
 
 ################################################################
 #merge the two point clouds using translation matrices
-
+final_point_cloud = Point_Cloud.merge_point_cloud(test_point_cloud, test_point_cloud_2)
+Point_Cloud.render_point_cloud(final_point_cloud)
 ################################################################
 #reproject and generate new masks
 

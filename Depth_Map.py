@@ -4,8 +4,11 @@ import torch
 import os
 import cv2
 import numpy
+import re
 
 INPUT_SIZE = 500
+REF_OBJ_SIZE = .2 #metres
+REF_OBJ_DIST = .4 #metres
 
 
 def generate_depth_map(image_path):
@@ -35,7 +38,9 @@ def generate_depth_map(image_path):
 
     depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0 #distribiute values between 0 and 255
     depth = depth.astype(numpy.uint8)#change the array to type uint8 (0-255)
-    
+    #if reference object values are too close to 0 we may need to allow the 0-min and max-255 values
+
+
     return depth
 
 def generate_depth_map_as_rgb(image_path):
@@ -48,9 +53,45 @@ def generate_depth_map_as_rgb(image_path):
                                 # * 255 because output is 0-1 range
                                         #[:, :, ::-1] reverse the order because its in BGR
                                                     #.astype(numpy.uint8) convert to int 0-255 instead of floats
+    depthImage[100:200,:500] = (255,255,255)
     #print(type(depthImage))
 
     cv2.imwrite(os.path.join("./DepthImages", os.path.splitext(os.path.basename(f"{image_path}"))[0] + f"_{INPUT_SIZE}.png"), depthImage)#save this new depth image to depthImages
+
+
+def read_scale_file(path):
+    ret_points = []
+    ret_values = []
+
+    regex = r"\((\d+),(\d+)\)\s*=\s*(\d+)"
+
+    with open(path, "r") as file:
+        for line in file:
+            match = re.search(regex,line)
+            if match:
+                x = match.group(1)
+                y = match.group(2)
+                depth_val = match.group(3)
+                ret_points.append((x,y))
+                ret_values.append(depth_val)
+
+    return ret_points, ret_values
+
+
+def get_simple_scale_factor(depth_val):#simple scale factor
+    return REF_OBJ_SIZE / depth_val
+
+def get_scale_factor(depth_map, x1, y1, x2, y2, fx, fy, cx, cy): #scale factor via 3d distance
+    point_1 = pixel_to_3d(x1,y1,depth_map,fx,fy,cx,cy)
+    point_2 = pixel_to_3d(x2,y2,depth_map,fx,fy,cx,cy)
+    apparent_length = numpy.linalg.norm(point_1 - point_2)#euclidean distance
+    return REF_OBJ_SIZE / apparent_length # the scale factor from the reference object coordinates
+
+def pixel_to_3d(u, v, depth_map, fx, fy, cx, cy):#same logic as in pointcloud
+    z = depth_map[v][u] #u,v or v,u (depth is in format y,x) but keep in mind that the .scale files are also in this format
+    x = (u - cx) * z / fx
+    y = (v - cy) * z / fy
+    return numpy.array([x, y, z])
 
 
 if __name__ == "__main__":
