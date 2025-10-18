@@ -4,8 +4,5 @@
 *.mp4
 *.scale
 __pycache__
-DepthModel/depth_anything_v2_vits.pth
-DepthModel/depth_anything_v2_vitb.pth
-DepthModel/depth_anything_v2_vitl.pth
-DepthModel/depth_anything_v2_vitg.pth
+*.pth
 *seg.pt

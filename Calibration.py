@@ -15,10 +15,10 @@ objp = numpy.zeros((grid_size[0]*grid_size[1],3), numpy.float32)#6: width inner 
 objp[:,:2] = numpy.mgrid[0:grid_size[1],0:grid_size[0]].T.reshape(-1,2)
 
 # Arrays to store object points and image points from all the images.
-objpoints = [] # 3d point in real world space
-imgpoints = [] # 2d points in image plane.
+objpoints = [] #real world space
+imgpoints = [] #image plane.
 
-Calibration_Images = glob.glob("./CalibrationInput/*.png")#Every Image in calibration input
+Calibration_Images = glob.glob("./CalibrationInput/Camera_2/*.png")#Every Image in calibration input
 
 for Calibration_Image in Calibration_Images:
 
@@ -30,7 +30,7 @@ for Calibration_Image in Calibration_Images:
     # Find the chess board corners
     ret, corners = cv2.findChessboardCorners(grey_image, (grid_size[1],grid_size[0]))
  
-    # If found, add object points, image points (after refining them)
+    # If found add object points and image points
     if ret == True:
         print("Located Grid")
         objpoints.append(objp)
@@ -45,7 +45,6 @@ for Calibration_Image in Calibration_Images:
         cv2.destroyAllWindows()
     else:
         print("Failed to locate grid")
-    #Do calibration stuff
 
 cv2.destroyAllWindows()
 
@@ -63,3 +62,9 @@ print(mtx)
 #[[888.29855742   0.         960.53009391]
 # [  0.         887.67732304 532.68979747]
 # [  0.           0.           1.        ]]
+
+
+#2.7k 4:3 W
+# [[1.17482757e+03 0.00000000e+00 1.33954703e+03]
+#  [0.00000000e+00 1.17382323e+03 1.01714804e+03]
+#  [0.00000000e+00 0.00000000e+00 1.00000000e+00]]

@@ -22,7 +22,7 @@ while True:
     if key & 0xFF == ord("q"):# q to exit
         break
     elif key & 0xFF == ord("s"):#s to save frame
-        cv2.imwrite(f"ImageExtractorOutput/Save_{frame_count}.png",frame)
+        cv2.imwrite(f"CalibrationInput/Camera_2/Save_{frame_count}.png",frame)
     
     frame_count += 1
 

@@ -6,12 +6,43 @@ import cv2
 import numpy
 import re
 
-INPUT_SIZE = 500
+INPUT_SIZE = 750
 REF_OBJ_SIZE = .2 #metres
-REF_OBJ_DIST = .4 #metres
+REF_OBJ_DIST = .362 #metres
 
 
-def generate_depth_map(image_path):
+def generate_metric_depth_map_depthanythingV2(image_path, outdoor = True):
+
+    sys.path.append(os.path.abspath('../Depth-Anything-V2/metric_depth'))
+    from depth_anything_v2.dpt import DepthAnythingV2
+
+    model_configs = {
+        'vits': {'encoder': 'vits', 'features': 64, 'out_channels': [48, 96, 192, 384]},
+        'vitb': {'encoder': 'vitb', 'features': 128, 'out_channels': [96, 192, 384, 768]},
+        'vitl': {'encoder': 'vitl', 'features': 256, 'out_channels': [256, 512, 1024, 1024]}
+    }
+
+    encoder = 'vitl' # or 'vits', 'vitb'
+    if outdoor:
+        dataset = 'vkitti' # 'hypersim' for indoor model, 'vkitti' for outdoor model
+        max_depth = 80 # 20 for indoor model, 80 for outdoor model
+    else:
+        dataset = 'hypersim' # 'hypersim' for indoor model, 'vkitti' for outdoor model
+        max_depth = 20 # 2
+
+    model = DepthAnythingV2(**{**model_configs[encoder], 'max_depth': max_depth})
+    model.load_state_dict(torch.load(f'DepthModel/depth_anything_v2_metric_{dataset}_{encoder}.pth', map_location='cpu'))
+    model.eval()
+
+    raw_img = cv2.imread(image_path)
+    depth = model.infer_image(raw_img,INPUT_SIZE) # HxW depth map in meters in numpy
+
+    print(f"Minimum depth value: {depth.min()}")
+    print(f"Maximum depth value: {depth.max()}")
+
+    return depth
+
+def generate_relative_depth_map_depthanythingV2(image_path, normalise):
 
     sys.path.append(os.path.abspath('../Depth-Anything-V2'))
     from depth_anything_v2.dpt import DepthAnythingV2
@@ -35,16 +66,18 @@ def generate_depth_map(image_path):
     img = cv2.imread(image_path)
 
     depth = model.infer_image(img,INPUT_SIZE) #can vary the input size as a second parameter here default is probably 518# HxW raw depth map in numpy
+    print(f"Minimum depth value: {depth.min()}")
+    print(f"Maximum depth value: {depth.max()}")
 
-    depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0 #distribiute values between 0 and 255
-    depth = depth.astype(numpy.uint8)#change the array to type uint8 (0-255)
-    #if reference object values are too close to 0 we may need to allow the 0-min and max-255 values
+    if normalise:
+        depth = (depth - depth.min()) / (depth.max() - depth.min()) * 255.0 #distribiute values between 0 and 255
+        depth = depth.astype(numpy.uint8)#change the array to type uint8 (0-255)
+        #if reference object values are too close to 0 we may need to allow the 0-min and max-255 values
 
 
     return depth
 
-def generate_depth_map_as_rgb(image_path):
-    depth = generate_depth_map(image_path)
+def depth_to_rgb(depth,image_path):
     cmap = matplotlib.colormaps.get_cmap('Spectral_r')#spectral reversed 
     #print(depth)
     depthImage = (cmap(depth)[:, :, :3] * 255)[:, :, ::-1].astype(numpy.uint8)
@@ -53,7 +86,6 @@ def generate_depth_map_as_rgb(image_path):
                                 # * 255 because output is 0-1 range
                                         #[:, :, ::-1] reverse the order because its in BGR
                                                     #.astype(numpy.uint8) convert to int 0-255 instead of floats
-    depthImage[100:200,:500] = (255,255,255)
     #print(type(depthImage))
 
     cv2.imwrite(os.path.join("./DepthImages", os.path.splitext(os.path.basename(f"{image_path}"))[0] + f"_{INPUT_SIZE}.png"), depthImage)#save this new depth image to depthImages
@@ -78,21 +110,17 @@ def read_scale_file(path):
     return ret_points, ret_values
 
 
-def get_simple_scale_factor(depth_val):#simple scale factor
-    return REF_OBJ_SIZE / depth_val
+def get_simple_scale_factor(depth_map,x,y):#simple scale factor
+    return REF_OBJ_DIST / depth_map[y][x]#real distance / the predicted distance
 
 def get_scale_factor(depth_map, x1, y1, x2, y2, fx, fy, cx, cy): #scale factor via 3d distance
     point_1 = pixel_to_3d(x1,y1,depth_map,fx,fy,cx,cy)
     point_2 = pixel_to_3d(x2,y2,depth_map,fx,fy,cx,cy)
     apparent_length = numpy.linalg.norm(point_1 - point_2)#euclidean distance
-    return REF_OBJ_SIZE / apparent_length # the scale factor from the reference object coordinates
+    return REF_OBJ_SIZE / apparent_length # the scale factor from the reference object coordinates from real size 
 
 def pixel_to_3d(u, v, depth_map, fx, fy, cx, cy):#same logic as in pointcloud
     z = depth_map[v][u] #u,v or v,u (depth is in format y,x) but keep in mind that the .scale files are also in this format
     x = (u - cx) * z / fx
     y = (v - cy) * z / fy
     return numpy.array([x, y, z])
-
-
-if __name__ == "__main__":
-    print("running as main")
