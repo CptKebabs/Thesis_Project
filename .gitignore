@@ -5,4 +5,8 @@
 *.scale
 __pycache__
 *.pth
-*seg.pt
+*.pt
+Segmentation/runs
+Segmentation/test/*
+Segmentation/train/*
+Segmentation/val/*
