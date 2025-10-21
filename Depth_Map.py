@@ -77,6 +77,30 @@ def generate_relative_depth_map_depthanythingV2(image_path, normalise):
 
     return depth
 
+def generate_metric_depth_map_depthpro(image_path, focal_length):
+    import depth_pro
+
+    #load model and preprocessing transform
+    model, transform = depth_pro.create_model_and_transforms()
+    model.eval()
+
+    #load and preprocess an image.
+    image, _, f_px = depth_pro.load_rgb(image_path)#also a predicted focal length but dont see the point in using it
+    image = transform(image)
+
+    #run inference.
+    prediction = model.infer(image, f_px=torch.tensor(focal_length))
+    depth = prediction["depth"]
+    focallength_px = prediction["focallength_px"]#focal length
+
+    print(depth.shape)
+    print(depth.max())
+    print(depth.min())
+    print(focallength_px.item())#extracts the number from the tensor
+
+    return depth.cpu().numpy()
+
+
 def depth_to_rgb(depth,image_path):
     cmap = matplotlib.colormaps.get_cmap('Spectral_r')#spectral reversed 
     #print(depth)
