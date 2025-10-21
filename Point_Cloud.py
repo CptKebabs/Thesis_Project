@@ -263,7 +263,7 @@ def reproject_point_cloud_to_2d_image(pcd,image_height,image_width,intrinsic,ext
     return image_reconstructed
 
 
-def combined_rotation_matrix_xyz(x_deg, y_deg, z_deg):
+def combined_rotation_matrix_xyz(x_deg, y_deg, z_deg):#testing to see if this fixes the issue with reprojection not lining up with translated positions
     x_rad, y_rad, z_rad = numpy.radians([x_deg, y_deg, z_deg])
     
     Rx = numpy.array([
@@ -292,10 +292,11 @@ def combined_rotation_matrix_xyz(x_deg, y_deg, z_deg):
     ret_matrix = Rz @ Ry @ Rx
     return ret_matrix
 
+def find_closest_point(pcd, point = numpy.array([0.0,0.0,0.0])):
+    pcd_points = numpy.asarray(pcd.points)
+    top_distances = numpy.linalg.norm(pcd_points - point, axis=1)
+    min_distance_idx = numpy.argmin(top_distances)#we do this bacause we want to know what the z component is not just the distance
+    min_distance_point = pcd_points[min_distance_idx]
+    return min_distance_point
 
 #output scaled point cloud
-
-#TODO:
-#Scale factor
-#Rotation
-#translation
