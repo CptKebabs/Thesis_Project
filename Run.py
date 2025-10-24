@@ -7,10 +7,12 @@ import Depth_Map
 import Point_Cloud
 
 #read paths static for now (either arg input or Glob loop in future)
-top_image_path = "ImageExtractorOutput\Test Pairs\TopPers167.png"
-bot_image_path = "ImageExtractorOutput\Test Pairs\BotPers167.png"
-top_image_path = "ImageExtractorOutput\Test Pairs\TopPers612.png"
-bot_image_path = "ImageExtractorOutput\Test Pairs\BotPers612.png"
+# top_image_path = "ImageExtractorOutput\Test Pairs\TopPers167.png"
+# bot_image_path = "ImageExtractorOutput\Test Pairs\BotPers167.png"
+# top_image_path = "ImageExtractorOutput\Test Pairs\TopPers612.png"
+# bot_image_path = "ImageExtractorOutput\Test Pairs\BotPers612.png"
+top_image_path = "TopPers_S2_2_25834.png"
+bot_image_path = "BotPers_S2_2_25834.png"
 
 top_image_dimensions = cv2.imread(top_image_path).shape #[0] is height [1] is width [2] is rgb channels
 bot_image_dimensions = cv2.imread(bot_image_path).shape
@@ -19,13 +21,13 @@ print(top_image_dimensions)
 print(bot_image_dimensions)
 
 #init camera intrinsics and extrinsics
-top_fx = 1.17482757e+03
+top_fx = 1.17482757e+03 #above water intrinsics
 top_fy = 1.17382323e+03
 top_cx = top_image_dimensions[1] / 2.0
 top_cy = top_image_dimensions[0] / 2.0
 
-bot_fx = 1.17482757e+03
-bot_fy = 1.17382323e+03
+bot_fx = 1.51350708e+03 #below water intrinsics
+bot_fy = 1.51350708e+03
 bot_cx = bot_image_dimensions[1] / 2.0
 bot_cy = bot_image_dimensions[0] / 2.0
 
@@ -50,8 +52,10 @@ bot_camera_T_extrinsic = numpy.array([[0.0],[0.0],[0.0]])
 bot_camera_R_extrinsic = numpy.array([[0.0],[0.0],[0.0]])
 
 #read scale data
-top_scale_path = f"DepthImages\{os.path.basename(os.path.splitext(top_image_path)[0])}_{Depth_Map.INPUT_SIZE}.scale"
-bot_scale_path = f"DepthImages\{os.path.basename(os.path.splitext(bot_image_path)[0])}_{Depth_Map.INPUT_SIZE}.scale"
+# top_scale_path = f"DepthImages\{os.path.basename(os.path.splitext(top_image_path)[0])}_{Depth_Map.INPUT_SIZE}.scale"
+# bot_scale_path = f"DepthImages\{os.path.basename(os.path.splitext(bot_image_path)[0])}_{Depth_Map.INPUT_SIZE}.scale"
+top_scale_path = f"{os.path.splitext(top_image_path)[0]}.scale"
+bot_scale_path = f"{os.path.splitext(top_image_path)[0]}.scale"
 
 top_ref_obj_points, top_depth_scale_values = Depth_Map.read_scale_file(top_scale_path)#reads as string
 bot_ref_obj_points, bot_depth_scale_values = Depth_Map.read_scale_file(bot_scale_path)#reads as string
@@ -87,10 +91,13 @@ plt.axis('off')
 plt.show()
 
 #generate depth maps
-top_depth_map = Depth_Map.generate_metric_depth_map_depthanythingV2(top_image_path, outdoor=False)
-bot_depth_map = Depth_Map.generate_metric_depth_map_depthanythingV2(bot_image_path, outdoor=False)
+top_depth_map = Depth_Map.generate_metric_depth_map_depthanythingV2(top_image_path, outdoor=True)
+bot_depth_map = Depth_Map.generate_metric_depth_map_depthanythingV2(bot_image_path, outdoor=True)
 
-top_depth_map = cv2.bilateralFilter(top_depth_map.astype(numpy.float32), d=5, sigmaColor=0.1, sigmaSpace=5)
+# top_depth_map = Depth_Map.generate_metric_depth_map_depthpro(top_image_path, top_fx)
+# bot_depth_map = Depth_Map.generate_metric_depth_map_depthpro(bot_image_path, bot_fx)
+
+top_depth_map = cv2.bilateralFilter(top_depth_map.astype(numpy.float32), d=5, sigmaColor=0.1, sigmaSpace=5)#not really needed but helps smooth for now
 bot_depth_map = cv2.bilateralFilter(bot_depth_map.astype(numpy.float32), d=5, sigmaColor=0.1, sigmaSpace=5)
 
 top_scale_factor = Depth_Map.get_scale_factor(top_depth_map, 
@@ -147,8 +154,12 @@ bot_pcd = bot_pcd + bot_ref_obj
 
 Point_Cloud.render_point_cloud(bot_pcd)
 
-final_pcd = top_pcd + bot_pcd
+final_pcd = bot_pcd
 Point_Cloud.render_point_cloud(final_pcd)
+
+# voxel_size = 0.01
+# voxel_grid = open3d.geometry.VoxelGrid.create_from_point_cloud(final_pcd, voxel_size=voxel_size)
+# open3d.visualization.draw_geometries([voxel_grid])
 
 top_image_reconstructed = Point_Cloud.reproject_point_cloud_to_2d_image(final_pcd,top_image_dimensions[0],top_image_dimensions[1],top_camera_intrinsic,top_camera_T_extrinsic,top_camera_R_extrinsic)
 bot_image_reconstructed = Point_Cloud.reproject_point_cloud_to_2d_image(final_pcd,bot_image_dimensions[0],bot_image_dimensions[1],bot_camera_intrinsic,bot_camera_T_extrinsic,bot_camera_R_extrinsic)
@@ -163,6 +174,7 @@ plt.imshow(bot_image_reconstructed)
 plt.show()
 
 #TODO create mask
+#fill empty gaps in texture
 #read image and convert to boolean numpy array of same size and true values where colour values exist
 
 

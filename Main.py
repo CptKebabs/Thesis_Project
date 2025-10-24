@@ -6,7 +6,7 @@ import matplotlib
 import numpy as np
 from PIL import Image
 import open3d as o3d #point cloud stuff
-import torch    #Neural network stuff
+#import torch    #Neural network stuff
 
 #This repo imports
 import Depth_Map

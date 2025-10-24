@@ -5,7 +5,7 @@ import cv2
 from ultralytics import YOLO
 
 def infer_and_create_mask(image_path):
-    model = YOLO("Segmentation/yolo11m-seg.pt")#this is a pretraind model on the COCO dataset
+    model = YOLO("Segmentation/yolo11m-seg.pt")#this is a pretrained model on the COCO dataset
 
     #image_path = "./Thesis_Project/bus.jpg"
 

@@ -300,3 +300,6 @@ def find_closest_point(pcd, point = numpy.array([0.0,0.0,0.0])):
     return min_distance_point
 
 #output scaled point cloud
+
+def convert_reprojection_to_mask():
+    return

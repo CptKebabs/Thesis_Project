@@ -1,6 +1,6 @@
 import cv2
 
-video_path = "./[Electro House] Virtual Riot - Energy Drink-360p.mp4"
+video_path = ""
 
 cap = cv2.VideoCapture(video_path)
 frame_count = 0

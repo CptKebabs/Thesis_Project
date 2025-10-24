@@ -3,8 +3,8 @@ import numpy as np
 
 aspect_4_3 = True #doing this because iMovie which i used to trim my videos forces a 16:9 aspect ratio
 
-video_path_top = "./Videos/Test Sample/Test Top.mp4"#top video
-video_path_bot = "./Videos/Test Sample/Test Bot.mp4"#bottom video
+video_path_top = ""#top video
+video_path_bot = ""#bottom video
 
 cap = cv2.VideoCapture(video_path_top)
 cap2 = cv2.VideoCapture(video_path_bot)

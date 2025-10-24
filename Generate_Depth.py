@@ -1,7 +1,7 @@
 import Depth_Map
 import glob
 
-images = glob.glob("ImageExtractorOutput/Test Pairs/*612.PNG")
+images = glob.glob("")
 total_images = len(images)
 current_idx = 0
 

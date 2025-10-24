@@ -6,7 +6,7 @@ import cv2
 import numpy
 import re
 
-INPUT_SIZE = 750
+INPUT_SIZE = 750 #for depthanything
 REF_OBJ_SIZE = .2 #metres
 REF_OBJ_DIST = .362 #metres
 
@@ -147,4 +147,5 @@ def pixel_to_3d(u, v, depth_map, fx, fy, cx, cy):#same logic as in pointcloud
     z = depth_map[v][u] #u,v or v,u (depth is in format y,x) but keep in mind that the .scale files are also in this format
     x = (u - cx) * z / fx
     y = (v - cy) * z / fy
+    print(f"depth value at point: {z}")
     return numpy.array([x, y, z])

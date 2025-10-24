@@ -1,8 +1,8 @@
-*.png
+
 *.jpeg
 *.jpg
 *.mp4
-*.scale
+
 __pycache__
 *.pth
 *.pt
@@ -10,3 +10,6 @@ Segmentation/runs
 Segmentation/test/*
 Segmentation/train/*
 Segmentation/val/*
+ImageExtractorOutput/*
+DepthImages/*
+CalibrationInput/*

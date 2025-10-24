@@ -5,7 +5,7 @@ import cv2
 import glob
 import os
 
-#REFERENCE_OBJECT_DIST = .4 #lets say metres for now (need to find actual value because its a right angled triangle)
+GLOB_PATH = "./*.png" #will read from and save to same directory
 
 def on_click(event):#event handler for clicking the display
     if event.button == 1:
@@ -21,8 +21,8 @@ def on_click(event):#event handler for clicking the display
         # scale_factor = get_scale_factor(depth_val, REFERENCE_OBJECT_DIST)
         # print(f"Scale factor is: {scale_factor}")
 
-        output_file = os.path.basename(curr_image)
-        output_file = f"ImageExtractorOutput/{os.path.splitext(output_file)[0]}.scale"
+        #output_file = os.path.basename(curr_image)
+        output_file = f"{os.path.splitext(curr_image)[0]}.scale"
 
         global click_count # to modify 
         if click_count == 0:
@@ -38,11 +38,6 @@ def on_click(event):#event handler for clicking the display
                 plt.close()
 
 
-
-# def get_scale_factor(depth_val, object_distance):# in metres/unit #use the reference object distance and depth value at the pixel to return the scale factor
-#     return object_distance / depth_val #basic idea will be if depth is: 40 and distance is known to be .4m then 1 depth becomes .4/40 = 0.01m 
-
-
 # #cmap = plt.get_cmap('Spectral_r')#This is the colourmap we are saving the depth images with
 # cmap_for_list = plt.get_cmap('Spectral')#we will use this one for getting our list so that low values are closer
 
@@ -56,7 +51,7 @@ def on_click(event):#event handler for clicking the display
 #     print(f"depth: ({i}) = {(r,g,b)}")
 
 #do glob stuff here to complete for every file in folder (top then bottom for each file and after the bottom is complete we write to a file the scale factors for both)
-depth_images = glob.glob("DepthImages/*.png")
+depth_images = glob.glob(GLOB_PATH)
 curr_image = ""     #global variable
 click_count = 0     #global variable
 
