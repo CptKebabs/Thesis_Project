@@ -5,6 +5,7 @@ import open3d
 
 import Depth_Map
 import Point_Cloud
+import Segmentation_Mask
 
 #read paths static for now (either arg input or Glob loop in future)
 # top_image_path = "ImageExtractorOutput\Test Pairs\TopPers167.png"
@@ -176,23 +177,29 @@ plt.show()
 
 #TODO create mask from top perspective and combine with top prediction
 #fill empty gaps in texture
-#read image and convert to boolean numpy array of same size and true values where colour values exist
+#compare to ground truth
 
 
-top_image_reconstructed_mask = numpy.zeros(top_image_dimensions, dtype=bool)#new array
-top_image_reconstructed_mask[top_image_reconstructed_mask != [0,0,0]] = True#if that pixel is not black
-top_image_reconstructed_mask = numpy.any(top_image_reconstructed != [0, 0, 0], axis=-1)#set mask pixel equivalent to True
+
+top_image_reconstructed_mask = Segmentation_Mask.reprojection_to_mask(top_image_reconstructed)#set mask pixel equivalent to True
 
 plt.imshow(top_image_reconstructed_mask, cmap='gray')#show as black (False) / white (True)
 plt.title("Boolean Mask")
 plt.axis('off')
 plt.show()
 
-#then compare to ground truth
+final_bottom_mask = Segmentation_Mask.add_masks(top_image_mask,top_image_reconstructed_mask)
+
+plt.imshow(final_bottom_mask, cmap='gray')#show as black (False) / white (True)
+plt.title("Boolean Mask")
+plt.axis('off')
+plt.show()
+
+
+print(Segmentation_Mask.calculate_IoU(top_image_mask,bot_image_mask))
 #so read yolo segmentation file and convert to our boolean mask
 
 #and compare it to out top_mask + top_image_reconstructed_mask in terms of mAP and IoU
-
 
 
 

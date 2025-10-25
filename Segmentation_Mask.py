@@ -56,3 +56,16 @@ def display_mask(mask,image):
     cv2.imshow("test",rgb)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+def reprojection_to_mask(reprojected_image):
+    return numpy.any(reprojected_image != [0, 0, 0], axis=-1)#set mask pixel equivalent to True
+
+def add_masks(mask1, mask2):
+    return numpy.logical_or(mask1, mask2)#add them together
+
+def calculate_IoU(mask1,mask2):# intersection (a OR b)/Union
+    intersection = numpy.logical_and(mask1, mask2).sum()
+    union = numpy.logical_or(mask1, mask2).sum()
+
+    return intersection / union
+
