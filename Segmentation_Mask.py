@@ -63,9 +63,47 @@ def reprojection_to_mask(reprojected_image):
 def add_masks(mask1, mask2):
     return numpy.logical_or(mask1, mask2)#add them together
 
-def calculate_IoU(mask1,mask2):# intersection (a OR b)/Union
+def calculate_IoU(mask1,mask2):# intersection (a AND b)/Union (a OR b)
     intersection = numpy.logical_and(mask1, mask2).sum()
     union = numpy.logical_or(mask1, mask2).sum()
 
     return intersection / union
+
+def yolo_to_numpy(file_path, img_dimentions):#read a ground truth file return the numpy boolean mask 
+    img_height = img_dimentions[0]
+    img_width = img_dimentions[1]
+
+    mask = numpy.zeros((img_height, img_width),  dtype=numpy.uint8)
+    
+    with open(file_path, 'r') as f:
+        lines = f.readlines()
+    
+    for line in lines:#for each mask
+        parts = line.strip().split()#get rid of lead/trail whitespace then split by spaces
+        if len(parts) < 3:#mask can be a single point
+            print(f"Error could not read enough vertices to create polygon at: {file_path}")
+            continue  # Not enough data for a polygon
+        
+        class_id = int(parts[0])#dont need this for my case
+        coords = list(map(float, parts[1:]))#convert to float and add to list
+        
+        
+        polygon = []
+        for i in range(0, len(coords), 2):#for each x1 y1
+            x = int(coords[i] * img_width)#unnormalise/convert to pixel values
+            y = int(coords[i+1] * img_height)
+            polygon.append([x, y])#add the point to the list
+        
+        polygon = numpy.array([polygon], dtype=numpy.int32)#convert to numpy
+        
+        #fill this polygons shape onto the mask array
+        cv2.fillPoly(mask, polygon, 1)#fillpoly needs to work with numbers not booleans apparently
+
+    mask = mask.astype(bool)#convert back to boolean mask
+    return mask
+
+#TODO:
+#mAP logic - We are going to get the IoU values for each top mask generated, Then we get the Precision and Recall from the (TP FP FN for different IoU thresholds)
+#          - then we can derive the precision and recall, generate the curve and find the area
+#convert yolo format mask to numpy binary array
 

@@ -165,7 +165,7 @@ Point_Cloud.render_point_cloud(final_pcd)
 top_image_reconstructed = Point_Cloud.reproject_point_cloud_to_2d_image(final_pcd,top_image_dimensions[0],top_image_dimensions[1],top_camera_intrinsic,top_camera_T_extrinsic,top_camera_R_extrinsic)
 bot_image_reconstructed = Point_Cloud.reproject_point_cloud_to_2d_image(final_pcd,bot_image_dimensions[0],bot_image_dimensions[1],bot_camera_intrinsic,bot_camera_T_extrinsic,bot_camera_R_extrinsic)
 
-
+#TODO need to convert from sparse point cloud to dense map here to make the mask not have gaps
 
 import matplotlib.pyplot as plt
 plt.imshow(top_image_reconstructed)
@@ -175,38 +175,34 @@ plt.imshow(bot_image_reconstructed)
 plt.show()
 
 
-#TODO create mask from top perspective and combine with top prediction
-#fill empty gaps in texture
-#compare to ground truth
-
-
-
 top_image_reconstructed_mask = Segmentation_Mask.reprojection_to_mask(top_image_reconstructed)#set mask pixel equivalent to True
 
-plt.imshow(top_image_reconstructed_mask, cmap='gray')#show as black (False) / white (True)
+plt.imshow(top_image_reconstructed_mask, cmap='gray')
 plt.title("Boolean Mask")
 plt.axis('off')
 plt.show()
 
-final_bottom_mask = Segmentation_Mask.add_masks(top_image_mask,top_image_reconstructed_mask)
+final_top_mask = Segmentation_Mask.add_masks(top_image_mask,top_image_reconstructed_mask)#combined orig predicted mask with the pointcloud mask from bottom perspective
 
-plt.imshow(final_bottom_mask, cmap='gray')#show as black (False) / white (True)
+plt.imshow(final_top_mask, cmap='gray')
 plt.title("Boolean Mask")
 plt.axis('off')
 plt.show()
 
 
-print(Segmentation_Mask.calculate_IoU(top_image_mask,bot_image_mask))
-#so read yolo segmentation file and convert to our boolean mask
+#TODO so read yolo segmentation file and convert to our boolean mask
+#and compare it to out top_mask + top_image_reconstructed_mask in terms of IoU and write it to output 
 
-#and compare it to out top_mask + top_image_reconstructed_mask in terms of mAP and IoU
+#print(Segmentation_Mask.calculate_IoU(top_image_mask,bot_image_mask))#calculate IoU from mask and groundtruth later
 
+test_mask = Segmentation_Mask.yolo_to_numpy("4a3a33f7-BotPers_S2_2_7850.txt", bot_image_dimensions)#Read yolo format
 
+plt.imshow(test_mask, cmap='gray')
+plt.title("Boolean Mask")
+plt.axis('off')
+plt.show()
 
-
-
-
-
+print(test_mask.shape)
 
 
 
