@@ -17,9 +17,13 @@ Guven Gemikonakli
 - Download one of the yolo segmentation pretrained models and place inside the Segmentation directory (not needed right now)
 
 ## Usage Instructions
+Main Execution takes place inside Run.py
 ### Image Pairs
 - if you are extracting from videos make sure your two videos for extraction (which are syncronised to be at the same time) are inside the Videos directory
 - change the paths of the videos inside the dual_perspective_extractor.py to match your videos and run the script (s to save image, q to quit)
+
+### Scale Factor
+- Use scale factor to generate reference object points for point cloud scaling
 
 
 
