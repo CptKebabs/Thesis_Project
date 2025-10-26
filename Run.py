@@ -22,6 +22,7 @@ print(top_image_dimensions)
 print(bot_image_dimensions)
 
 #init camera intrinsics and extrinsics
+#TODO IS THE TOP CAMERA INSTRINSIC CORRECT CONSIDERING ITS LOOKING THROUGH WATER? (refraction on water surface causes complexities for focal length) CAN WE IMPROVE IT
 top_fx = 1.17482757e+03 #above water intrinsics
 top_fy = 1.17382323e+03
 top_cx = top_image_dimensions[1] / 2.0
@@ -56,7 +57,7 @@ bot_camera_R_extrinsic = numpy.array([[0.0],[0.0],[0.0]])
 # top_scale_path = f"DepthImages\{os.path.basename(os.path.splitext(top_image_path)[0])}_{Depth_Map.INPUT_SIZE}.scale"
 # bot_scale_path = f"DepthImages\{os.path.basename(os.path.splitext(bot_image_path)[0])}_{Depth_Map.INPUT_SIZE}.scale"
 top_scale_path = f"{os.path.splitext(top_image_path)[0]}.scale"
-bot_scale_path = f"{os.path.splitext(top_image_path)[0]}.scale"
+bot_scale_path = f"{os.path.splitext(bot_image_path)[0]}.scale"
 
 top_ref_obj_points, top_depth_scale_values = Depth_Map.read_scale_file(top_scale_path)#reads as string
 bot_ref_obj_points, bot_depth_scale_values = Depth_Map.read_scale_file(bot_scale_path)#reads as string
@@ -65,6 +66,7 @@ print(f"Top Scale Points: {top_ref_obj_points}")
 print(f"Bot Scale Points: {bot_ref_obj_points}")
 
 #generate segmentation masks
+#TODO make this YOLO once we have model
 
 top_image_mask = numpy.zeros((top_image_dimensions[0],top_image_dimensions[1]), dtype=bool)#for now
 bot_image_mask = numpy.zeros((bot_image_dimensions[0],bot_image_dimensions[1]), dtype=bool)
@@ -98,8 +100,8 @@ bot_depth_map = Depth_Map.generate_metric_depth_map_depthanythingV2(bot_image_pa
 # top_depth_map = Depth_Map.generate_metric_depth_map_depthpro(top_image_path, top_fx)
 # bot_depth_map = Depth_Map.generate_metric_depth_map_depthpro(bot_image_path, bot_fx)
 
-top_depth_map = cv2.bilateralFilter(top_depth_map.astype(numpy.float32), d=5, sigmaColor=0.1, sigmaSpace=5)#not really needed but helps smooth for now
-bot_depth_map = cv2.bilateralFilter(bot_depth_map.astype(numpy.float32), d=5, sigmaColor=0.1, sigmaSpace=5)
+# top_depth_map = cv2.bilateralFilter(top_depth_map.astype(numpy.float32), d=5, sigmaColor=0.1, sigmaSpace=5)#not really needed but helps smooth for now
+# bot_depth_map = cv2.bilateralFilter(bot_depth_map.astype(numpy.float32), d=5, sigmaColor=0.1, sigmaSpace=5)
 
 top_scale_factor = Depth_Map.get_scale_factor(top_depth_map, 
                                               int(top_ref_obj_points[0][0]),
@@ -158,15 +160,22 @@ Point_Cloud.render_point_cloud(bot_pcd)
 final_pcd = bot_pcd
 Point_Cloud.render_point_cloud(final_pcd)
 
-# voxel_size = 0.01
-# voxel_grid = open3d.geometry.VoxelGrid.create_from_point_cloud(final_pcd, voxel_size=voxel_size)
-# open3d.visualization.draw_geometries([voxel_grid])
-
 top_image_reconstructed = Point_Cloud.reproject_point_cloud_to_2d_image(final_pcd,top_image_dimensions[0],top_image_dimensions[1],top_camera_intrinsic,top_camera_T_extrinsic,top_camera_R_extrinsic)
 bot_image_reconstructed = Point_Cloud.reproject_point_cloud_to_2d_image(final_pcd,bot_image_dimensions[0],bot_image_dimensions[1],bot_camera_intrinsic,bot_camera_T_extrinsic,bot_camera_R_extrinsic)
 
 #TODO need to convert from sparse point cloud to dense map here to make the mask not have gaps
+# alpha = 0.03
+# # Compute the mesh
+# mesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(final_pcd, alpha) This takes way too long 
+# # Optionally, compute vertex normals for shading
+# #mesh.compute_vertex_normals()
+# # Visualize
+# open3d.visualization.draw_geometries([mesh])
 
+
+
+
+#raw image reprojections
 import matplotlib.pyplot as plt
 plt.imshow(top_image_reconstructed)
 plt.show()
@@ -174,14 +183,23 @@ plt.show()
 plt.imshow(bot_image_reconstructed)
 plt.show()
 
-
-top_image_reconstructed_mask = Segmentation_Mask.reprojection_to_mask(top_image_reconstructed)#set mask pixel equivalent to True
+#raw image convented to a boolean array (mask)
+top_image_reconstructed_mask = Segmentation_Mask.reprojection_to_mask(top_image_reconstructed)#set pixels that are coloured to True
 
 plt.imshow(top_image_reconstructed_mask, cmap='gray')
 plt.title("Boolean Mask")
 plt.axis('off')
 plt.show()
 
+#gaps filled
+top_image_reconstructed_mask = Segmentation_Mask.fill_gaps_in_mask(top_image_reconstructed_mask,3)#use a morphological close
+
+plt.imshow(top_image_reconstructed_mask, cmap='gray')
+plt.title("Boolean Mask")
+plt.axis('off')
+plt.show()
+
+#now add it to the top YOLO only prediction mask
 final_top_mask = Segmentation_Mask.add_masks(top_image_mask,top_image_reconstructed_mask)#combined orig predicted mask with the pointcloud mask from bottom perspective
 
 plt.imshow(final_top_mask, cmap='gray')
@@ -190,11 +208,7 @@ plt.axis('off')
 plt.show()
 
 
-#TODO so read yolo segmentation file and convert to our boolean mask
-#and compare it to out top_mask + top_image_reconstructed_mask in terms of IoU and write it to output 
-
-#print(Segmentation_Mask.calculate_IoU(top_image_mask,bot_image_mask))#calculate IoU from mask and groundtruth later
-
+#read ground truth
 test_mask = Segmentation_Mask.yolo_to_numpy("4a3a33f7-BotPers_S2_2_7850.txt", bot_image_dimensions)#Read yolo format
 
 plt.imshow(test_mask, cmap='gray')
@@ -203,6 +217,9 @@ plt.axis('off')
 plt.show()
 
 print(test_mask.shape)
+
+#compare with IoU to ground truth and get IoU of new prediction
+print(Segmentation_Mask.calculate_IoU(top_image_mask,bot_image_mask))#calculate IoU from mask and groundtruth later
 
 
 

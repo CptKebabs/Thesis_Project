@@ -69,6 +69,15 @@ def calculate_IoU(mask1,mask2):# intersection (a AND b)/Union (a OR b)
 
     return intersection / union
 
+#more stuff if needed https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html
+def fill_gaps_in_mask(mask,kernel_size):#technically this is less correct than using a mesh produced from the point cloud but because our method can only ever produce a 2d cross section of the seaweed the 3d information produced by the mesh is mostly wasted anyway
+    kernel = numpy.ones((kernel_size, kernel_size), numpy.uint8)#3x3 kernel for now
+
+    new_mask = (mask.astype(numpy.uint8)) * 255#opencv wants int inputs so 255 being True 0 being false
+
+    new_mask = cv2.morphologyEx(new_mask, cv2.MORPH_CLOSE, kernel)#Closing is Dilation followed by Erosion
+    return new_mask > 0#back to boolean
+
 def yolo_to_numpy(file_path, img_dimentions):#read a ground truth file return the numpy boolean mask 
     img_height = img_dimentions[0]
     img_width = img_dimentions[1]
