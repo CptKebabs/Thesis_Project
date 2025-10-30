@@ -3,11 +3,9 @@
 import numpy
 import cv2
 from ultralytics import YOLO
-
-def infer_and_create_mask(image_path):
-    model = YOLO("Segmentation/yolo11m-seg.pt")#this is a pretrained model on the COCO dataset
-
-    #image_path = "./Thesis_Project/bus.jpg"
+ 
+def infer_and_create_mask(image_path, model_path, target_class):
+    model = YOLO(model_path)
 
     image = cv2.imread(image_path)
 
@@ -32,7 +30,7 @@ def infer_and_create_mask(image_path):
                     mask = cv2.resize(mask, (image.shape[1], image.shape[0]))# resize the mask to be same as image
 
                     #represent the mask only
-                    if(class_name == "person"):#can do this if we run into issues with 
+                    if(class_name == target_class):#can do this if we run into issues with 
                         mask_rgb = numpy.zeros_like(image,dtype=numpy.uint8)
                         mask_rgb[mask == 1] = (255,255,255)
                         final_mask = numpy.logical_or(final_mask, mask)
@@ -66,16 +64,17 @@ def add_masks(mask1, mask2):
 def calculate_IoU(mask1,mask2):# intersection (a AND b)/Union (a OR b)
     intersection = numpy.logical_and(mask1, mask2).sum()
     union = numpy.logical_or(mask1, mask2).sum()
-
-    return intersection / union
+    if union > 0:# case where neither detect anything
+        return intersection / union
+    return 1.0 #because both agree on there being nothing
 
 #more stuff if needed https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html
-def fill_gaps_in_mask(mask,kernel_size):#technically this is less correct than using a mesh produced from the point cloud but because our method can only ever produce a 2d cross section of the seaweed the 3d information produced by the mesh is mostly wasted anyway
+def fill_gaps_in_mask(mask,kernel_size,iter):#technically this is less correct than using a mesh produced from the point cloud but because our method can only ever produce a 2d cross section of the seaweed the 3d information produced by the mesh is mostly wasted anyway
     kernel = numpy.ones((kernel_size, kernel_size), numpy.uint8)#3x3 kernel for now
 
     new_mask = (mask.astype(numpy.uint8)) * 255#opencv wants int inputs so 255 being True 0 being false
 
-    new_mask = cv2.morphologyEx(new_mask, cv2.MORPH_CLOSE, kernel)#Closing is Dilation followed by Erosion
+    new_mask = cv2.morphologyEx(new_mask, cv2.MORPH_CLOSE, kernel, iterations=iter)#Closing is Dilation followed by Erosion
     return new_mask > 0#back to boolean
 
 def yolo_to_numpy(file_path, img_dimentions):#read a ground truth file return the numpy boolean mask 

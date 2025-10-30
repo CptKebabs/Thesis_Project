@@ -13,3 +13,4 @@ Segmentation/val/*
 ImageExtractorOutput/*
 DepthImages/*
 CalibrationInput/*
+Input/*

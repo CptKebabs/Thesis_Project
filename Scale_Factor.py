@@ -5,9 +5,10 @@ import cv2
 import glob
 import os
 
-GLOB_PATH = "./*.png" #will read from and save to same directory
+GLOB_PATH = "./Input/*BotPers*.png" #will read from and save to same directory
 
 def on_click(event):#event handler for clicking the display
+    output_file = f"{os.path.splitext(curr_image)[0]}.scale"
     if event.button == 1:
         # colour_val = image[int(event.ydata),int(event.xdata)]
         # r = int(colour_val[0])
@@ -22,7 +23,7 @@ def on_click(event):#event handler for clicking the display
         # print(f"Scale factor is: {scale_factor}")
 
         #output_file = os.path.basename(curr_image)
-        output_file = f"{os.path.splitext(curr_image)[0]}.scale"
+        
 
         global click_count # to modify 
         if click_count == 0:
@@ -36,6 +37,11 @@ def on_click(event):#event handler for clicking the display
                     print(f"Wrote: {int(event.xdata)},{int(event.ydata)} = {depth_val}")
                 click_count = 0
                 plt.close()
+    if event.button == 3:#right click to skip file (if ref object not visible)
+        if os.path.exists(output_file):
+            os.remove(output_file)
+        click_count = 0
+        plt.close()
 
 
 # #cmap = plt.get_cmap('Spectral_r')#This is the colourmap we are saving the depth images with
