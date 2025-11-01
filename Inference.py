@@ -22,15 +22,15 @@ def infer(top_image_path, bot_image_path, bot_scale_path, top_ground_truth_path,
     bot_image_dimensions = bot_image_cv2.shape
 
 
-    # print("Running BM3D")#run noise reduction
-    # top_image_cv2 = top_image_cv2 / 255.0#normalise to 0-1 range for bm3d
-    # bot_image_cv2 = top_image_cv2 / 255.0#normalise to 0-1 range for bm3d
+    print("Running BM3D")#run noise reduction
+    top_image_cv2 = top_image_cv2 / 255.0#normalise to 0-1 range for bm3d
+    bot_image_cv2 = top_image_cv2 / 255.0#normalise to 0-1 range for bm3d
 
-    # top_image_cv2 = bm3d.bm3d_rgb(top_image_cv2, sigma_psd = SIGMA_PSD)#run bm3d on image data
-    # top_image_cv2 = (numpy.clip(top_image_cv2, 0, 1) * 255).astype(numpy.uint8)#convert back to 0-255 values
+    top_image_cv2 = bm3d.bm3d_rgb(top_image_cv2, sigma_psd = SIGMA_PSD)#run bm3d on image data
+    top_image_cv2 = (numpy.clip(top_image_cv2, 0, 1) * 255).astype(numpy.uint8)#convert back to 0-255 values
 
-    # bot_image_cv2 = bm3d.bm3d_rgb(bot_image_cv2, sigma_psd = SIGMA_PSD)
-    # bot_image_cv2 = (numpy.clip(bot_image_cv2, 0, 1) * 255).astype(numpy.uint8)
+    bot_image_cv2 = bm3d.bm3d_rgb(bot_image_cv2, sigma_psd = SIGMA_PSD)
+    bot_image_cv2 = (numpy.clip(bot_image_cv2, 0, 1) * 255).astype(numpy.uint8)
 
     top_image_PIL = cv2.cvtColor(top_image_cv2, cv2.COLOR_BGR2RGB)#convert to PILs RGB format (opencv is BGR)
     top_image_PIL = Image.fromarray(top_image_PIL)

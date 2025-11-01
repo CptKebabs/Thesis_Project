@@ -6,6 +6,7 @@ import cv2
 import numpy
 import re
 from PIL import Image
+import Segmentation_Mask
 
 INPUT_SIZE = 750 #for depthanything
 REF_OBJ_SIZE = .2 #metres
@@ -131,8 +132,17 @@ def generate_relative_depthmap_UDepth(raw_img_PIL, mask):
     with torch.no_grad():#we dont want to modify model, faster and more efficient
         _, depth = net(img)
 
+    ref_mask = Segmentation_Mask.read_ref_obj_mask()
+    ref_mask = cv2.resize(ref_mask.astype(numpy.uint8), (320,240), interpolation = cv2.INTER_NEAREST)
+    ref_mask = ref_mask.astype(bool)
+
     resized_mask = cv2.resize(mask.astype(numpy.uint8), (320,240), interpolation = cv2.INTER_NEAREST)
     resized_mask = resized_mask.astype(bool)
+
+    resized_mask = Segmentation_Mask.add_masks(ref_mask,resized_mask)
+    import matplotlib.pyplot as plt
+    plt.imshow(resized_mask)
+    plt.show()
     depth = output_result(depth, resized_mask)# this does the tensor squeeze cpu numpy stuff, its using the mask to make the depths more consistent in that region
     return depth
 
