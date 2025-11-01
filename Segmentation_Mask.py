@@ -34,9 +34,9 @@ def infer_and_create_mask(image_path, model_path, target_class):
                         mask_rgb = numpy.zeros_like(image,dtype=numpy.uint8)
                         mask_rgb[mask == 1] = (255,255,255)
                         final_mask = numpy.logical_or(final_mask, mask)
-                        display_mask(mask,image)
+                        #display_mask(mask,image)
 
-    display_mask(final_mask,image)
+    #display_mask(final_mask,image)
     return final_mask
                     
 
@@ -55,18 +55,40 @@ def display_mask(mask,image):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+def save_mask(path,mask):
+    cv2.imwrite(path, mask.astype(numpy.uint8) * 255)#saves as grayscale
+
 def reprojection_to_mask(reprojected_image):
     return numpy.any(reprojected_image != [0, 0, 0], axis=-1)#set mask pixel equivalent to True
 
 def add_masks(mask1, mask2):
     return numpy.logical_or(mask1, mask2)#add them together
 
+def read_ref_obj_mask():
+    mask = cv2.imread("reference_object_mask.png")
+    return numpy.any(mask == [0,0,0],axis=-1)#numpy.all is more correct here
+
 def calculate_IoU(mask1,mask2):# intersection (a AND b)/Union (a OR b)
+    ref_mask = read_ref_obj_mask()
+
+    mask1 = mask1.copy()
+    mask2 = mask2.copy()
+
+    mask1[ref_mask] = 0#ignore the regoins where the reference object exists
+    mask2[ref_mask] = 0
+
     intersection = numpy.logical_and(mask1, mask2).sum()
     union = numpy.logical_or(mask1, mask2).sum()
     if union > 0:# case where neither detect anything
         return intersection / union
     return 1.0 #because both agree on there being nothing
+
+def calculate_dice(mask1,mask2):
+    intersection = numpy.logical_and(mask1, mask2).sum()
+    mask_sum = mask1.sum() + mask2.sum()
+    if mask_sum > 0:
+        return 2.0 * intersection / mask_sum
+    return 1.0
 
 #more stuff if needed https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html
 def fill_gaps_in_mask(mask,kernel_size,iter):#technically this is less correct than using a mesh produced from the point cloud but because our method can only ever produce a 2d cross section of the seaweed the 3d information produced by the mesh is mostly wasted anyway
@@ -109,9 +131,3 @@ def yolo_to_numpy(file_path, img_dimentions):#read a ground truth file return th
 
     mask = mask.astype(bool)#convert back to boolean mask
     return mask
-
-#TODO:
-#mAP logic - We are going to get the IoU values for each top mask generated, Then we get the Precision and Recall from the (TP FP FN for different IoU thresholds)
-#          - then we can derive the precision and recall, generate the curve and find the area
-#convert yolo format mask to numpy binary array
-

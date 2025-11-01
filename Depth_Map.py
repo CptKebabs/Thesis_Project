@@ -5,13 +5,14 @@ import os
 import cv2
 import numpy
 import re
+from PIL import Image
 
 INPUT_SIZE = 750 #for depthanything
 REF_OBJ_SIZE = .2 #metres
 REF_OBJ_DIST = .362 #metres
 
 
-def generate_metric_depth_map_depthanythingV2(image_path, outdoor = True):
+def generate_metric_depth_map_depthanythingV2(raw_img_cv, outdoor = True):
 
     sys.path.append(os.path.abspath('../Depth-Anything-V2/metric_depth'))
     from depth_anything_v2.dpt import DepthAnythingV2
@@ -30,19 +31,24 @@ def generate_metric_depth_map_depthanythingV2(image_path, outdoor = True):
         dataset = 'hypersim' # 'hypersim' for indoor model, 'vkitti' for outdoor model
         max_depth = 20 # 2
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     model = DepthAnythingV2(**{**model_configs[encoder], 'max_depth': max_depth})
-    model.load_state_dict(torch.load(f'DepthModel/depth_anything_v2_metric_{dataset}_{encoder}.pth', map_location='cpu'))
+    model.load_state_dict(torch.load(f'DepthModel/depth_anything_v2_metric_{dataset}_{encoder}.pth', map_location=device))
+    model.to(device)
     model.eval()
 
-    raw_img = cv2.imread(image_path)
-    depth = model.infer_image(raw_img,INPUT_SIZE) # HxW depth map in meters in numpy
+
+
+    #raw_img = cv2.imread(image_path)
+    depth = model.infer_image(raw_img_cv,INPUT_SIZE) # HxW depth map in meters in numpy
 
     print(f"Minimum depth value: {depth.min()}")
     print(f"Maximum depth value: {depth.max()}")
 
     return depth
 
-def generate_relative_depth_map_depthanythingV2(image_path, normalise):
+def generate_relative_depth_map_depthanythingV2(raw_img_cv, normalise):
 
     sys.path.append(os.path.abspath('../Depth-Anything-V2'))
     from depth_anything_v2.dpt import DepthAnythingV2
@@ -63,9 +69,9 @@ def generate_relative_depth_map_depthanythingV2(image_path, normalise):
     model.load_state_dict(torch.load(f'DepthModel/depth_anything_v2_{encoder}.pth', map_location='cpu'))
     model = model.to(DEVICE).eval()
 
-    img = cv2.imread(image_path)
+    #raw_img = cv2.imread(image_path)
 
-    depth = model.infer_image(img,INPUT_SIZE) #can vary the input size as a second parameter here default is probably 518# HxW raw depth map in numpy
+    depth = model.infer_image(raw_img_cv,INPUT_SIZE) #can vary the input size as a second parameter here default is probably 518# HxW raw depth map in numpy
     print(f"Minimum depth value: {depth.min()}")
     print(f"Maximum depth value: {depth.max()}")
 
@@ -77,7 +83,7 @@ def generate_relative_depth_map_depthanythingV2(image_path, normalise):
 
     return depth
 
-def generate_metric_depth_map_depthpro(image_path, focal_length):
+def generate_metric_depth_map_depthpro(raw_img_PIL, focal_length):
     import depth_pro
 
     #load model and preprocessing transform
@@ -85,7 +91,8 @@ def generate_metric_depth_map_depthpro(image_path, focal_length):
     model.eval()
 
     #load and preprocess an image.
-    image, _, f_px = depth_pro.load_rgb(image_path)#also a predicted focal length but dont see the point in using it
+    #image, _, f_px = depth_pro.load_rgb(image_path)#also a predicted focal length but dont see the point in using it
+    image = numpy.array(raw_img_PIL)
     image = transform(image)
 
     #run inference.
@@ -94,11 +101,51 @@ def generate_metric_depth_map_depthpro(image_path, focal_length):
     focallength_px = prediction["focallength_px"]#focal length
 
     print(depth.shape)
-    print(depth.max())
-    print(depth.min())
-    print(focallength_px.item())#extracts the number from the tensor
+    print(f"Minimum depth value: {depth.min()}")
+    print(f"Maximum depth value: {depth.max()}")
+    #print(focallength_px.item())#extracts the number from the tensor
 
     return depth.cpu().numpy()
+
+
+def generate_relative_depthmap_UDepth(raw_img_PIL, mask):
+
+    sys.path.append(os.path.abspath('../UDepth'))
+    from model.udepth import UDepth
+    #from utils.data import RGB_to_RMI
+    from utils.utils import output_result
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    net = UDepth.build(n_bins=80, min_val=0.001, max_val=1, norm="linear")
+    net.load_state_dict(torch.load("./DepthModel/model_RGB.pth"))
+    net.to(device)
+    net.eval()
+
+    img = raw_img_PIL.resize((640,480),Image.BILINEAR)
+    img = numpy.array(img).astype(numpy.float32) / 255.0
+    
+    
+    img = torch.from_numpy(img).permute(2, 0, 1).unsqueeze(0).to(device)#change dimensions and then wrap in extra brackets and send to device
+
+    with torch.no_grad():#we dont want to modify model, faster and more efficient
+        _, depth = net(img)
+
+    resized_mask = cv2.resize(mask.astype(numpy.uint8), (320,240), interpolation = cv2.INTER_NEAREST)
+    resized_mask = resized_mask.astype(bool)
+    depth = output_result(depth, resized_mask)# this does the tensor squeeze cpu numpy stuff, its using the mask to make the depths more consistent in that region
+    return depth
+
+
+
+
+
+
+
+
+
+
+
 
 
 def depth_to_rgb(depth,image_path):
@@ -141,7 +188,7 @@ def get_scale_factor(depth_map, x1, y1, x2, y2, fx, fy, cx, cy): #scale factor v
     point_1 = pixel_to_3d(x1,y1,depth_map,fx,fy,cx,cy)
     point_2 = pixel_to_3d(x2,y2,depth_map,fx,fy,cx,cy)
     apparent_length = numpy.linalg.norm(point_1 - point_2)#euclidean distance
-    return REF_OBJ_SIZE / apparent_length # the scale factor from the reference object coordinates from real size 
+    return REF_OBJ_SIZE / apparent_length, point_1[2], point_2[2] # the scale factor from the reference object coordinates from real size 
 
 def pixel_to_3d(u, v, depth_map, fx, fy, cx, cy):#same logic as in pointcloud
     z = depth_map[v][u] #u,v or v,u (depth is in format y,x) but keep in mind that the .scale files are also in this format
